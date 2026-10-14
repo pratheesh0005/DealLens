@@ -33,6 +33,7 @@ resqlink_server/config/firebase_service_account_key.json
 *.env
 
 # Firebase google-services files contain API keys — keep out of VCS
-# (Add to your own machine manually; share via secure channel)
-# resqlink_flutter/android/app/google-services.json
-# resqlink_flutter/ios/Runner/GoogleService-Info.plist
+*google-services*.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist

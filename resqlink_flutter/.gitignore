@@ -32,7 +32,10 @@
 build/
 **/build/
 *.apk
-*google-services (*).json
+*google-services*.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
 
 # Web related
 lib/generated_plugin_registrant.dart
