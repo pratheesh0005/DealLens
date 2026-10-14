@@ -1,0 +1,22 @@
+### ResQLink EmergencyStatusEvent — immutable audit log of every status change.
+### Created by the server on every status transition; never deleted.
+class: EmergencyStatusEvent
+table: emergency_status_events
+
+fields:
+  ### FK to emergency_requests.id
+  emergencyId: int
+  ### The new status after this transition.
+  status: String
+  ### The userId (from user_profiles) who triggered this change.
+  actorId: int
+  ### Optional human-readable note (e.g. "Responder declined: too far").
+  note: String?
+  ### When this event was recorded.
+  createdAt: DateTime
+
+indexes:
+  status_event_emergency_idx:
+    fields: emergencyId
+  status_event_created_at_idx:
+    fields: createdAt

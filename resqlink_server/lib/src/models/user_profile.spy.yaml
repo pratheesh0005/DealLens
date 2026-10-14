@@ -1,0 +1,32 @@
+### ResQLink UserProfile — stores role and display info for every user.
+### userId links to the serverpod_auth AppUser (the auth module's user record).
+class: UserProfile
+table: user_profiles
+
+fields:
+  ### The serverpod_auth userId (from AuthUser). Not nullable — every profile belongs to a real auth user.
+  userId: int
+  ### The user's display name.
+  displayName: String
+  ### The user's email (mirrored from auth for quick lookup).
+  email: String
+  ### Optional phone number.
+  phone: String?
+  ### Role: citizen | responder | admin. Always validated server-side.
+  role: String
+  ### ISO 8601 timestamp when the profile was created.
+  createdAt: DateTime
+  ### Optional avatar URL.
+  avatarUrl: String?
+  ### FCM device token for push notifications.
+  fcmToken: String?
+
+indexes:
+  user_profiles_user_id_unique:
+    fields: userId
+    unique: true
+  user_profiles_email_idx:
+    fields: email
+    unique: true
+  user_profiles_role_idx:
+    fields: role

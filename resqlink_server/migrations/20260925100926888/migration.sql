@@ -1,0 +1,533 @@
+BEGIN;
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "emergency_requests" (
+    "id" bigserial PRIMARY KEY,
+    "requesterId" bigint NOT NULL,
+    "type" text NOT NULL,
+    "description" text NOT NULL,
+    "latitude" double precision NOT NULL,
+    "longitude" double precision NOT NULL,
+    "priority" text NOT NULL,
+    "status" text NOT NULL,
+    "createdAt" timestamp without time zone NOT NULL,
+    "updatedAt" timestamp without time zone NOT NULL,
+    "acceptedAt" timestamp without time zone,
+    "arrivedAt" timestamp without time zone,
+    "resolvedAt" timestamp without time zone,
+    "assignedResponderId" bigint,
+    "idempotencyKey" text NOT NULL,
+    "cancellationReason" text,
+    "matchingRetryCount" bigint NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "emergency_status_idx" ON "emergency_requests" USING btree ("status");
+CREATE INDEX "emergency_priority_idx" ON "emergency_requests" USING btree ("priority");
+CREATE INDEX "emergency_created_at_idx" ON "emergency_requests" USING btree ("createdAt");
+CREATE INDEX "emergency_requester_idx" ON "emergency_requests" USING btree ("requesterId");
+CREATE INDEX "emergency_responder_idx" ON "emergency_requests" USING btree ("assignedResponderId");
+CREATE UNIQUE INDEX "emergency_idempotency_key_unique" ON "emergency_requests" USING btree ("idempotencyKey");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "emergency_status_events" (
+    "id" bigserial PRIMARY KEY,
+    "emergencyId" bigint NOT NULL,
+    "status" text NOT NULL,
+    "actorId" bigint NOT NULL,
+    "note" text,
+    "createdAt" timestamp without time zone NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "status_event_emergency_idx" ON "emergency_status_events" USING btree ("emergencyId");
+CREATE INDEX "status_event_created_at_idx" ON "emergency_status_events" USING btree ("createdAt");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "responder_profiles" (
+    "id" bigserial PRIMARY KEY,
+    "userProfileId" bigint NOT NULL,
+    "isAvailable" boolean NOT NULL,
+    "capabilities" text NOT NULL,
+    "currentLat" double precision,
+    "currentLng" double precision,
+    "lastLocationUpdate" timestamp without time zone,
+    "activeEmergencyId" bigint,
+    "totalResponseCount" bigint NOT NULL,
+    "lastAssignedAt" timestamp without time zone
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "responder_profile_user_profile_id_unique" ON "responder_profiles" USING btree ("userProfileId");
+CREATE INDEX "responder_availability_idx" ON "responder_profiles" USING btree ("isAvailable");
+CREATE INDEX "responder_active_emergency_idx" ON "responder_profiles" USING btree ("activeEmergencyId");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "user_profiles" (
+    "id" bigserial PRIMARY KEY,
+    "userId" bigint NOT NULL,
+    "displayName" text NOT NULL,
+    "email" text NOT NULL,
+    "phone" text,
+    "role" text NOT NULL,
+    "createdAt" timestamp without time zone NOT NULL,
+    "avatarUrl" text,
+    "fcmToken" text
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "user_profiles_user_id_unique" ON "user_profiles" USING btree ("userId");
+CREATE UNIQUE INDEX "user_profiles_email_idx" ON "user_profiles" USING btree ("email");
+CREATE INDEX "user_profiles_role_idx" ON "user_profiles" USING btree ("role");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_cloud_storage" (
+    "id" bigserial PRIMARY KEY,
+    "storageId" text NOT NULL,
+    "path" text NOT NULL,
+    "addedTime" timestamp without time zone NOT NULL,
+    "expiration" timestamp without time zone,
+    "byteData" bytea NOT NULL,
+    "verified" boolean NOT NULL,
+    "contentType" text,
+    "cacheControl" text,
+    "contentDisposition" text,
+    "contentEncoding" text,
+    "customMetadata" text
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_cloud_storage_path_idx" ON "serverpod_cloud_storage" USING btree ("storageId", "path");
+CREATE INDEX "serverpod_cloud_storage_expiration" ON "serverpod_cloud_storage" USING btree ("expiration");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_cloud_storage_direct_download" (
+    "id" bigserial PRIMARY KEY,
+    "storageId" text NOT NULL,
+    "path" text NOT NULL,
+    "expiration" timestamp without time zone NOT NULL,
+    "authKey" text NOT NULL,
+    "downloadFileName" text,
+    "contentType" text
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_cloud_storage_direct_download_auth_key" ON "serverpod_cloud_storage_direct_download" USING btree ("authKey");
+CREATE INDEX "serverpod_cloud_storage_direct_download_expiration" ON "serverpod_cloud_storage_direct_download" USING btree ("expiration");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_cloud_storage_direct_upload" (
+    "id" bigserial PRIMARY KEY,
+    "storageId" text NOT NULL,
+    "path" text NOT NULL,
+    "expiration" timestamp without time zone NOT NULL,
+    "authKey" text NOT NULL,
+    "maxFileSize" bigint NOT NULL DEFAULT 10485760,
+    "contentLength" bigint,
+    "preventOverwrite" boolean NOT NULL DEFAULT false,
+    "contentType" text,
+    "cacheControl" text,
+    "contentDisposition" text,
+    "contentEncoding" text,
+    "customMetadata" text
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_cloud_storage_direct_upload_storage_path" ON "serverpod_cloud_storage_direct_upload" USING btree ("storageId", "path");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_future_call" (
+    "id" bigserial PRIMARY KEY,
+    "name" text NOT NULL,
+    "time" timestamp without time zone NOT NULL,
+    "serializedObject" text,
+    "serverId" text NOT NULL,
+    "identifier" text,
+    "scheduling" json
+);
+
+-- Indexes
+CREATE INDEX "serverpod_future_call_time_idx" ON "serverpod_future_call" USING btree ("time");
+CREATE INDEX "serverpod_future_call_serverId_idx" ON "serverpod_future_call" USING btree ("serverId");
+CREATE INDEX "serverpod_future_call_identifier_idx" ON "serverpod_future_call" USING btree ("identifier");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_future_call_claim" (
+    "id" bigserial PRIMARY KEY,
+    "futureCallId" bigint,
+    "lastHeartbeatTime" timestamp without time zone NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "future_call_unique_idx" ON "serverpod_future_call_claim" USING btree ("futureCallId");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_health_connection_info" (
+    "id" bigserial PRIMARY KEY,
+    "serverId" text NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    "active" bigint NOT NULL,
+    "closing" bigint NOT NULL,
+    "idle" bigint NOT NULL,
+    "granularity" bigint NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_health_connection_info_timestamp_idx" ON "serverpod_health_connection_info" USING btree ("timestamp", "serverId", "granularity");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_health_metric" (
+    "id" bigserial PRIMARY KEY,
+    "name" text NOT NULL,
+    "serverId" text NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    "isHealthy" boolean NOT NULL,
+    "value" double precision NOT NULL,
+    "granularity" bigint NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_health_metric_timestamp_idx" ON "serverpod_health_metric" USING btree ("timestamp", "serverId", "name", "granularity");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_log" (
+    "id" bigserial PRIMARY KEY,
+    "sessionLogId" bigint NOT NULL,
+    "messageId" bigint,
+    "reference" text,
+    "serverId" text NOT NULL,
+    "time" timestamp without time zone NOT NULL,
+    "logLevel" bigint NOT NULL,
+    "message" text NOT NULL,
+    "error" text,
+    "stackTrace" text,
+    "order" bigint NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_log_sessionLogId_idx" ON "serverpod_log" USING btree ("sessionLogId", "order");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_message_log" (
+    "id" bigserial PRIMARY KEY,
+    "sessionLogId" bigint NOT NULL,
+    "serverId" text NOT NULL,
+    "messageId" bigint NOT NULL,
+    "endpoint" text NOT NULL,
+    "messageName" text NOT NULL,
+    "duration" double precision NOT NULL,
+    "error" text,
+    "stackTrace" text,
+    "slow" boolean NOT NULL,
+    "order" bigint NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_message_log_sessionLogId_idx" ON "serverpod_message_log" USING btree ("sessionLogId", "order");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_method" (
+    "id" bigserial PRIMARY KEY,
+    "endpoint" text NOT NULL,
+    "method" text NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_method_endpoint_method_idx" ON "serverpod_method" USING btree ("endpoint", "method");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_migrations" (
+    "id" bigserial PRIMARY KEY,
+    "module" text NOT NULL,
+    "version" text NOT NULL,
+    "timestamp" timestamp without time zone
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_migrations_ids" ON "serverpod_migrations" USING btree ("module");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_query_log" (
+    "id" bigserial PRIMARY KEY,
+    "serverId" text NOT NULL,
+    "sessionLogId" bigint NOT NULL,
+    "messageId" bigint,
+    "query" text NOT NULL,
+    "duration" double precision NOT NULL,
+    "numRows" bigint,
+    "error" text,
+    "stackTrace" text,
+    "slow" boolean NOT NULL,
+    "order" bigint NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_query_log_sessionLogId_idx" ON "serverpod_query_log" USING btree ("sessionLogId", "order");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_readwrite_test" (
+    "id" bigserial PRIMARY KEY,
+    "number" bigint NOT NULL
+);
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_runtime_settings" (
+    "id" bigserial PRIMARY KEY,
+    "logSettings" json NOT NULL,
+    "logSettingsOverrides" json NOT NULL,
+    "logServiceCalls" boolean NOT NULL,
+    "logMalformedCalls" boolean NOT NULL
+);
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_session_log" (
+    "id" bigserial PRIMARY KEY,
+    "serverId" text NOT NULL,
+    "time" timestamp without time zone NOT NULL,
+    "module" text,
+    "endpoint" text,
+    "method" text,
+    "duration" double precision,
+    "numQueries" bigint,
+    "slow" boolean,
+    "error" text,
+    "stackTrace" text,
+    "authenticatedUserId" bigint,
+    "userId" text,
+    "isOpen" boolean,
+    "touched" timestamp without time zone NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_session_log_serverid_idx" ON "serverpod_session_log" USING btree ("serverId");
+CREATE INDEX "serverpod_session_log_time_idx" ON "serverpod_session_log" USING btree ("time");
+CREATE INDEX "serverpod_session_log_touched_idx" ON "serverpod_session_log" USING btree ("touched");
+CREATE INDEX "serverpod_session_log_isopen_idx" ON "serverpod_session_log" USING btree ("isOpen");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_auth_key" (
+    "id" bigserial PRIMARY KEY,
+    "userId" bigint NOT NULL,
+    "hash" text NOT NULL,
+    "scopeNames" json NOT NULL,
+    "method" text NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_auth_key_userId_idx" ON "serverpod_auth_key" USING btree ("userId");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_email_auth" (
+    "id" bigserial PRIMARY KEY,
+    "userId" bigint NOT NULL,
+    "email" text NOT NULL,
+    "hash" text NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_email_auth_email" ON "serverpod_email_auth" USING btree ("email");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_email_create_request" (
+    "id" bigserial PRIMARY KEY,
+    "userName" text NOT NULL,
+    "email" text NOT NULL,
+    "hash" text NOT NULL,
+    "verificationCode" text NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_email_auth_create_account_request_idx" ON "serverpod_email_create_request" USING btree ("email");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_email_failed_sign_in" (
+    "id" bigserial PRIMARY KEY,
+    "email" text NOT NULL,
+    "time" timestamp without time zone NOT NULL,
+    "ipAddress" text NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_email_failed_sign_in_email_idx" ON "serverpod_email_failed_sign_in" USING btree ("email");
+CREATE INDEX "serverpod_email_failed_sign_in_time_idx" ON "serverpod_email_failed_sign_in" USING btree ("time");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_email_reset" (
+    "id" bigserial PRIMARY KEY,
+    "userId" bigint NOT NULL,
+    "verificationCode" text NOT NULL,
+    "expiration" timestamp without time zone NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_email_reset_verification_idx" ON "serverpod_email_reset" USING btree ("verificationCode");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_google_refresh_token" (
+    "id" bigserial PRIMARY KEY,
+    "userId" bigint NOT NULL,
+    "refreshToken" text NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_google_refresh_token_userId_idx" ON "serverpod_google_refresh_token" USING btree ("userId");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_user_image" (
+    "id" bigserial PRIMARY KEY,
+    "userId" bigint NOT NULL,
+    "version" bigint NOT NULL,
+    "url" text NOT NULL
+);
+
+-- Indexes
+CREATE INDEX "serverpod_user_image_user_id" ON "serverpod_user_image" USING btree ("userId", "version");
+
+--
+-- ACTION CREATE TABLE
+--
+CREATE TABLE "serverpod_user_info" (
+    "id" bigserial PRIMARY KEY,
+    "userIdentifier" text NOT NULL,
+    "userName" text,
+    "fullName" text,
+    "email" text,
+    "created" timestamp without time zone NOT NULL,
+    "imageUrl" text,
+    "scopeNames" json NOT NULL,
+    "blocked" boolean NOT NULL
+);
+
+-- Indexes
+CREATE UNIQUE INDEX "serverpod_user_info_user_identifier" ON "serverpod_user_info" USING btree ("userIdentifier");
+CREATE INDEX "serverpod_user_info_email" ON "serverpod_user_info" USING btree ("email");
+
+--
+-- ACTION CREATE FOREIGN KEY
+--
+ALTER TABLE ONLY "responder_profiles"
+    ADD CONSTRAINT "responder_profiles_fk_0"
+    FOREIGN KEY("userProfileId")
+    REFERENCES "user_profiles"("id")
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION;
+
+--
+-- ACTION CREATE FOREIGN KEY
+--
+ALTER TABLE ONLY "serverpod_future_call_claim"
+    ADD CONSTRAINT "serverpod_future_call_claim_fk_0"
+    FOREIGN KEY("futureCallId")
+    REFERENCES "serverpod_future_call"("id")
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION;
+
+--
+-- ACTION CREATE FOREIGN KEY
+--
+ALTER TABLE ONLY "serverpod_log"
+    ADD CONSTRAINT "serverpod_log_fk_0"
+    FOREIGN KEY("sessionLogId")
+    REFERENCES "serverpod_session_log"("id")
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION;
+
+--
+-- ACTION CREATE FOREIGN KEY
+--
+ALTER TABLE ONLY "serverpod_message_log"
+    ADD CONSTRAINT "serverpod_message_log_fk_0"
+    FOREIGN KEY("sessionLogId")
+    REFERENCES "serverpod_session_log"("id")
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION;
+
+--
+-- ACTION CREATE FOREIGN KEY
+--
+ALTER TABLE ONLY "serverpod_query_log"
+    ADD CONSTRAINT "serverpod_query_log_fk_0"
+    FOREIGN KEY("sessionLogId")
+    REFERENCES "serverpod_session_log"("id")
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION;
+
+
+--
+-- MIGRATION VERSION FOR resqlink
+--
+INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
+    VALUES ('resqlink', '20260925100926888', now())
+    ON CONFLICT ("module")
+    DO UPDATE SET "version" = '20260925100926888', "timestamp" = now();
+
+--
+-- MIGRATION VERSION FOR serverpod
+--
+INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
+    VALUES ('serverpod', '20260824182259319', now())
+    ON CONFLICT ("module")
+    DO UPDATE SET "version" = '20260824182259319', "timestamp" = now();
+
+--
+-- MIGRATION VERSION FOR serverpod_auth
+--
+INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
+    VALUES ('serverpod_auth', '20260824182343939', now())
+    ON CONFLICT ("module")
+    DO UPDATE SET "version" = '20260824182343939', "timestamp" = now();
+
+
+COMMIT;

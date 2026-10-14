@@ -1,0 +1,32 @@
+admin:
+  - getDashboardStats:
+  - getAllEmergencies:
+  - getAllResponders:
+  - forceResolveEmergency:
+emergency:
+  - createEmergency:
+  - getEmergency:
+  - getMyEmergencies:
+  - getActiveEmergencies:
+  - cancelEmergency:
+  - getStatusEvents:
+  - streamEmergency:
+  - streamEmergencyFeed:
+responder:
+  - registerOrUpdateResponder:
+  - updateLocation:
+  - updateAvailability:
+  - getResponderByUserProfileId:
+  - getResponderById:
+  - getMyResponderProfile:
+  - acceptEmergency:
+  - declineEmergency:
+  - updateEmergencyStatus:
+  - streamAssignments:
+user:
+  - authenticate:
+  - getMyProfile:
+  - updateMyProfile:
+  - updateFcmToken:
+greeting:
+  - hello:

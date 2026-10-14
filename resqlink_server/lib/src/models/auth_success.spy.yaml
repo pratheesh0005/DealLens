@@ -1,0 +1,6 @@
+class: AuthSuccess
+fields:
+  userId: int
+  keyId: int
+  key: String
+  profile: UserProfile

@@ -1,0 +1,53 @@
+### ResQLink EmergencyRequest — the core entity of the platform.
+### Created by a citizen, assigned to a responder via smart matching.
+class: EmergencyRequest
+table: emergency_requests
+
+fields:
+  ### FK to user_profiles.id — the citizen who created this request.
+  requesterId: int
+  ### Emergency category: medical | accident | fire | rescue | missing | other
+  type: String
+  ### Free-text description from the citizen.
+  description: String
+  ### Location latitude where help is needed.
+  latitude: double
+  ### Location longitude where help is needed.
+  longitude: double
+  ### Priority level: low | medium | high | critical
+  priority: String
+  ### Lifecycle status: pending | matching | assigned | accepted | enRoute | arrived | resolved | cancelled
+  status: String
+  ### When the request was created.
+  createdAt: DateTime
+  ### When the request was last updated (any status change).
+  updatedAt: DateTime
+  ### When a responder accepted the assignment.
+  acceptedAt: DateTime?
+  ### When the responder marked themselves as arrived.
+  arrivedAt: DateTime?
+  ### When the emergency was resolved.
+  resolvedAt: DateTime?
+  ### FK to responder_profiles.id — set when a responder is matched.
+  assignedResponderId: int?
+  ### Client-generated UUID to prevent duplicate submissions on retry.
+  idempotencyKey: String
+  ### Human-readable cancellation or rejection reason, if applicable.
+  cancellationReason: String?
+  ### Number of times the matching algorithm has been retried.
+  matchingRetryCount: int
+
+indexes:
+  emergency_status_idx:
+    fields: status
+  emergency_priority_idx:
+    fields: priority
+  emergency_created_at_idx:
+    fields: createdAt
+  emergency_requester_idx:
+    fields: requesterId
+  emergency_responder_idx:
+    fields: assignedResponderId
+  emergency_idempotency_key_unique:
+    fields: idempotencyKey
+    unique: true

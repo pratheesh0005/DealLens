@@ -1,0 +1,21 @@
+### ResQLink AdminStats — non-DB serializable DTO for the admin dashboard.
+### Returned by AdminEndpoint.getDashboardStats(). No database table.
+class: AdminStats
+
+fields:
+  ### Total emergencies currently in status=pending or status=matching.
+  pendingCount: int
+  ### Total emergencies currently in status=assigned, accepted, enRoute, or arrived.
+  activeCount: int
+  ### Total emergencies resolved today (UTC).
+  resolvedTodayCount: int
+  ### Total emergencies cancelled today (UTC).
+  cancelledTodayCount: int
+  ### Number of responders with isAvailable=true and no activeEmergencyId.
+  availableResponderCount: int
+  ### Number of responders currently handling an active emergency.
+  activeResponderCount: int
+  ### Total registered citizens.
+  totalCitizens: int
+  ### Total registered responders.
+  totalResponders: int

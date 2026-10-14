@@ -1,0 +1,34 @@
+### ResQLink ResponderProfile — availability and capability info for responders.
+### Each row corresponds to a UserProfile with role=responder.
+class: ResponderProfile
+table: responder_profiles
+
+fields:
+  ### FK to user_profiles.id
+  userProfileId: int, relation(parent=user_profiles)
+  ### Whether the responder is currently available to receive requests.
+  isAvailable: bool
+  ### Comma-separated capability codes: medical,fire,rescue,accident,missing
+  capabilities: String
+  ### Last known latitude (-90 to 90). Null if not yet set.
+  currentLat: double?
+  ### Last known longitude (-180 to 180). Null if not yet set.
+  currentLng: double?
+  ### When the location was last updated.
+  lastLocationUpdate: DateTime?
+  ### FK to emergency_requests.id for the active assignment, if any.
+  activeEmergencyId: int?
+  ### Total number of emergencies this responder has resolved.
+  totalResponseCount: int
+  ### Timestamp of the last time this responder was assigned an emergency.
+  ### Used for fairness scoring in the matching algorithm.
+  lastAssignedAt: DateTime?
+
+indexes:
+  responder_profile_user_profile_id_unique:
+    fields: userProfileId
+    unique: true
+  responder_availability_idx:
+    fields: isAvailable
+  responder_active_emergency_idx:
+    fields: activeEmergencyId
