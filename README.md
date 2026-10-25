@@ -325,8 +325,8 @@ Required for Android 11+ (API 30+) package visibility to launch external browser
 
 ---
 
-## 👥 Contributors & College Submission
+## 👥 Serverpod Build Something Hackathon 
 
 - **Project**: DealLens — Price Comparison & Deal Finder Mobile Application
 - **Stack**: Flutter (Dart) + Serverpod 4.x + Firebase + SerpApi Google Shopping
-- **Submission**: Mini-Project / Final Year Engineering Submission
+- **Submission**: Mini-Project / Serverpod Build Something Hackathon Submission
